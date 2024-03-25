@@ -7,3 +7,5 @@ pub mod create_donation;
 pub use create_donation::*;
 pub mod initialize_creator;
 pub use initialize_creator::*;
+pub mod donate;
+pub use donate::*;

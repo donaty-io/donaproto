@@ -2,6 +2,7 @@ use anchor_lang::prelude::*;
 mod contexts;
 use contexts::*;
 use std::time::{SystemTime, UNIX_EPOCH};
+use anchor_spl::token::{self, Transfer};
 
 pub mod errors;
 
@@ -29,12 +30,16 @@ pub mod donaproto {
     }
 
     pub fn initialize_contributor(
-        ctx: Context<InitializeContributor>
+        ctx: Context<InitializeContributor>,
+        bump: u8,
     ) -> Result<()> {
+        // TODO: verify bump
         let contributor_data = &mut ctx.accounts.contributor_data;
         contributor_data.total_amount_donated = 0;
         contributor_data.total_amount_earned = 0;
         contributor_data.donations_count = 0;
+        contributor_data.donation_protocol = ctx.accounts.donation_protocol.key();
+        contributor_data.bump = bump;
 
         Ok(())
     }
@@ -61,6 +66,79 @@ pub mod donaproto {
         donation_data.holding_wallet = ctx.accounts.holding_wallet.key();
         donation_data.holding_bump = holding_bump;
         donation_data.ipfs_hash = ipfs_hash;
+
+        Ok(())
+    }
+
+    pub fn donate(
+        ctx: Context<Donate>,
+        amount: u64,
+    ) -> Result<()> {
+        let donation_data = &mut ctx.accounts.donation_data;
+        let contributor_data = &mut ctx.accounts.contributor_data;
+        let donation_protocol = &ctx.accounts.donation_protocol;
+
+        if donation_data.is_closed {
+            return Err(DonationError::DonationClosed.into());
+        }
+
+        if amount == 0 {
+            return Err(DonationError::DonationAmountZero.into());
+        }
+
+        // Transfer amount from user to donation holding wallet
+        token::transfer(
+            CpiContext::new(
+                ctx.accounts.token_program.to_account_info().clone(),
+                Transfer {
+                    from: ctx.accounts.user_token_wallet.to_account_info().clone(),
+                    to: ctx.accounts.holding_wallet.to_account_info().clone(),
+                    authority: ctx
+                        .accounts
+                        .user_wallet
+                        .to_account_info()
+                        .clone(),
+                },
+            ),
+            amount,
+        )?;
+
+        donation_data.total_amount_received.checked_add(amount).unwrap();
+        contributor_data.total_amount_donated.checked_add(amount).unwrap();
+        contributor_data.donations_count.checked_add(1).unwrap();
+
+        if donation_protocol.min_amount_to_earn <= amount {
+            // TODO: add calculation for reward amount
+            let reward_treasury_balance = ctx.accounts.reward_treasury.amount;
+            let mut reward_amount = amount.checked_div(100).unwrap();
+            if reward_amount > reward_treasury_balance {
+                reward_amount = reward_treasury_balance.checked_div(100).unwrap();
+            }
+            // END
+ 
+            // Transfer amount of tokens from reward treasury wallet to user
+            let seeds = &[
+                TREASURY_PREFIX.as_bytes(),
+                ctx.accounts.donation_protocol.to_account_info().key.as_ref(),
+                &[ctx.accounts.donation_protocol.treasury_owner_bump],
+            ];
+            let signer = &[&seeds[..]];
+            if reward_amount > 0 {
+                token::transfer(
+                    CpiContext::new_with_signer(
+                        ctx.accounts.token_program.to_account_info().clone(),
+                        Transfer {
+                            from: ctx.accounts.reward_treasury.to_account_info().clone(),
+                            to: ctx.accounts.user_reward_token_wallet.to_account_info().clone(),
+                            authority: ctx.accounts.reward_treasury_owner.to_account_info().clone(),
+                        },
+                        signer,
+                    ),
+                    reward_amount,
+                )?;
+            }
+
+        }
 
         Ok(())
     }
