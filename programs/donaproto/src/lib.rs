@@ -107,7 +107,7 @@ pub mod donaproto {
         contributor_data.total_amount_donated.checked_add(amount).unwrap();
         contributor_data.donations_count.checked_add(1).unwrap();
 
-        if donation_protocol.min_amount_to_earn <= amount {
+        if amount >= donation_protocol.min_amount_to_earn {
             // TODO: add calculation for reward amount
             let reward_treasury_balance = ctx.accounts.reward_treasury.amount;
             let mut reward_amount = amount.checked_div(100).unwrap();

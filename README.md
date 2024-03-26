@@ -1,7 +1,7 @@
 # Overview
 
 The donation protocol implements on-chain creation of donation, contributor, creator data.
-People who donate is eligible to receive token rewards.
+People who donate are eligible to receive token rewards.
 
 
 # Environment Setup
