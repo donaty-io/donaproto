@@ -31,11 +31,11 @@
             solana --version
             solana config set --url localhost
 
-        - name: Install anchor 
-          run: npm i -g @project-serum/anchor-cli@0.29.0
+        - name: Install Anchor
+          run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
 
         - name: Build
           run: anchor build
 
-        - name: Build
+        - name: Test
           run: anchor test
