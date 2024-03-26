@@ -12,7 +12,7 @@
 
       steps:
         - name: Checkout
-          uses: actions/checkout@v2
+          uses: actions/checkout@v3
 
         - name: Setup Rust
           uses: actions-rs/toolchain@v1
@@ -22,13 +22,24 @@
             components: rustfmt, clippy
 
         - name: Install Solana
+          uses: metadaoproject/setup-solana@v1.0
+          with: 
+            solana-cli-version: ${{ env.SOLANA_VERSION }}
+
+        # - name: Install Solana
+        #   run: |
+        #     sudo apt-get update
+        #     sudo apt-get install -y libssl-dev libudev-dev zlib1g-dev llvm clang
+        #     curl -sSf https://release.solana.com/v${{ env.SOLANA_VERSION }}/install | sh
+        #     solana config set --url localhost
+        #     solana-keygen new
+        #     sudo apt-get update
+
+        - name: Generate new keygen
           run: |
-            sudo apt-get update
-            sudo apt-get install -y libssl-dev libudev-dev zlib1g-dev llvm clang
-            curl -sSf https://release.solana.com/v${{ env.SOLANA_VERSION }}/install | sh
-            solana config set --url localhost
             solana-keygen new
-            sudo apt-get update
+            solana --version
+            solana config set --url localhost
 
         - name: Install Anchor
           run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
