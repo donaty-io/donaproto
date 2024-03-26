@@ -4,6 +4,7 @@ const {
   getOrCreateAssociatedTokenAccount
 } = require('@solana/spl-token');
 const os = require('os');
+const assert = require('assert');
 
 const TREASURY_PREFIX = 'treasury';
 
@@ -77,5 +78,12 @@ describe("donaproto", () => {
       }
     );
     console.log("Your transaction signature", tx);
+
+    const onchainDonationProtocolData = await program.account.donationProtocolData.fetch(donationProtocolData.publicKey);
+    assert.deepEqual(onchainDonationProtocolData.treasuryMint, rewardsMintPubKey);
+    assert.deepEqual(onchainDonationProtocolData.treasury, treasuryTokenAccount.address);
+    assert.deepEqual(onchainDonationProtocolData.donationMint, donationMintPubKey);
+    assert.equal(onchainDonationProtocolData.minAmountToEarn.toString(), minAmountToEarn.toString());
+    assert.equal(onchainDonationProtocolData.treasuryOwnerBump.toString(), treasuryOwnerBump.toString());
   });
 });
