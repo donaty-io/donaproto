@@ -6,12 +6,7 @@ use anchor_spl::token::{Mint, TokenAccount};
 pub struct Donate<'info> {
   #[account(mut,
     constraint = donation_data.donation_protocol == donation_protocol.key(),
-    constraint = holding_wallet.key() == donation_data.holding_wallet,
-    seeds = [
-      "donation".as_bytes(),
-      donation_data.to_account_info().key.as_ref(),
-    ],
-    bump
+    constraint = donation_data.holding_wallet == holding_wallet.key(),
   )]
   pub donation_data: Account<'info, DonationData>,
   #[account(mut,

@@ -9,3 +9,5 @@ pub mod initialize_creator;
 pub use initialize_creator::*;
 pub mod donate;
 pub use donate::*;
+pub mod withdraw_funds;
+pub use withdraw_funds::*;

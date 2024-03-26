@@ -36,7 +36,7 @@ pub struct InitializeDonationProtocol<'info> {
 
   #[account(
     constraint = treasury.owner == *treasury_owner.key,
-    constraint = treasury.mint == token_mint.key(),
+    constraint = treasury.mint == treasury_mint.key(),
   )]
   pub treasury: Account<'info, TokenAccount>,
   #[account(
@@ -45,7 +45,7 @@ pub struct InitializeDonationProtocol<'info> {
   )]
   /// CHECK: pda account ["treasury", donation_protocol_data]
   pub treasury_owner: AccountInfo<'info>,
-  pub token_mint: Account<'info, Mint>,
+  pub treasury_mint: Account<'info, Mint>,
   pub donation_mint: Account<'info, Mint>,
   #[account(mut)]
   pub payer: Signer<'info>,

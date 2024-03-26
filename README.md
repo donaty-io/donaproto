@@ -14,3 +14,13 @@ People who donate are eligible to receive token rewards.
 ```
 $ anchor build
 ```
+
+### Test programs
+1. Generate payer if it doesn't exist yet
+```
+$ solana-keygen new
+```
+2. Run the functional and integration tests. First it builds and deploys the smart contract then tests are executed locally.
+```
+$ anchor test
+```
