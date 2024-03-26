@@ -26,6 +26,9 @@
             sudo apt-get update
             sudo apt-get install -y libssl-dev libudev-dev zlib1g-dev llvm clang
             curl -sSf https://release.solana.com/v${{ env.SOLANA_VERSION }}/install | sh
+            solana config set --url localhost
+            solana-keygen new
+            sudo apt-get update
 
         - name: Install Anchor
           run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
