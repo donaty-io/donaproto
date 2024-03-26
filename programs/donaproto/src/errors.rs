@@ -4,4 +4,10 @@ use anchor_lang::prelude::*;
 pub enum DonationError {
     #[msg("Invalid ending timestamp")]
     InvalidEndingTimestamp,
+    #[msg("Invalid bump")]
+    InvalidBump,
+    #[msg("Donation is closed")]
+    DonationClosed,
+    #[msg("Donation amount can not be zero")]
+    DonationAmountZero,
 }

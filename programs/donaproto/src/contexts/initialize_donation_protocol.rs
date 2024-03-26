@@ -3,6 +3,8 @@ use anchor_spl::token::{Mint, TokenAccount};
 use std::mem;
 use crate::common::DISCRIMINATOR_LEN;
 
+pub const TREASURY_PREFIX: &str = "treasury";
+
 #[account]
 #[derive(Default)]
 pub struct DonationProtocolData {
@@ -38,7 +40,7 @@ pub struct InitializeDonationProtocol<'info> {
   )]
   pub treasury: Account<'info, TokenAccount>,
   #[account(
-    seeds = ["treasury".as_bytes(), donation_protocol_data.key().as_ref()],
+    seeds = [TREASURY_PREFIX.as_bytes(), donation_protocol_data.key().as_ref()],
     bump,
   )]
   /// CHECK: pda account ["treasury", donation_protocol_data]
