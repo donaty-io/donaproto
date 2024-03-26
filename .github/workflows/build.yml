@@ -37,8 +37,8 @@
 
         - name: Generate new keygen
           run: |
-            solana-keygen new
             solana --version
+            solana-keygen new
             solana config set --url localhost
 
         - name: Install Anchor
