@@ -2,7 +2,8 @@ const anchor = require("@coral-xyz/anchor");
 const {
   createMint,
   mintTo,
-  getOrCreateAssociatedTokenAccount
+  getOrCreateAssociatedTokenAccount,
+  TOKEN_PROGRAM_ID,
 } = require('@solana/spl-token');
 const os = require('os');
 const assert = require('assert');
@@ -11,6 +12,7 @@ const { getNowTs, rechargeWallet } = require('./common/utils');
 const TREASURY_PREFIX = 'treasury';
 const CREATOR_PREFIX = 'creator';
 const HOLDING_PREFIX = 'holding';
+const CONTRIBUTOR_PREFIX = 'contributor';
 
 describe("donaproto", () => {
   const homedir = os.homedir();
@@ -30,6 +32,10 @@ describe("donaproto", () => {
   const creatorWallet = anchor.web3.Keypair.generate();
   let creatorDataPubkey, creatorDataBump;
   let creatorDonationTokenAccount;
+  const donationData = anchor.web3.Keypair.generate();
+  const contributorWallet = anchor.web3.Keypair.generate();
+  let treasuryTokenAccount, treasuryOwnerPubkey, treasuryOwnerBump;
+  let donationHoldingWallet;
 
   before(async () => {
     donationMintPubKey = await createMint(
@@ -48,19 +54,21 @@ describe("donaproto", () => {
       rewardMintDecimals
     )
 
-    const [treasuryOwnerPK, treasuryOwnerBump] = anchor.web3.PublicKey.findProgramAddressSync(
+    const [treasuryOwnerPubkeyFound, treasuryOwnerBumpFound] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from(TREASURY_PREFIX),
         donationProtocolData.publicKey.toBuffer(),
       ],
       program.programId,
     );
+    treasuryOwnerPubkey = treasuryOwnerPubkeyFound;
+    treasuryOwnerBump = treasuryOwnerBumpFound;
 
-    const treasuryTokenAccount = await getOrCreateAssociatedTokenAccount(
+    treasuryTokenAccount = await getOrCreateAssociatedTokenAccount(
       connection,
       payer,
       rewardsMintPubKey,
-      treasuryOwnerPK,
+      treasuryOwnerPubkey,
       allowOwnerOffCurve = true
     )
 
@@ -71,7 +79,7 @@ describe("donaproto", () => {
         accounts: {
           donationProtocolData: donationProtocolData.publicKey,
           treasury: treasuryTokenAccount.address,
-          treasuryOwner: treasuryOwnerPK,
+          treasuryOwner: treasuryOwnerPubkey,
           treasuryMint: rewardsMintPubKey,
           donationMint: donationMintPubKey,
           payer: payer.publicKey,
@@ -134,14 +142,10 @@ describe("donaproto", () => {
     // top up creator wallet to be able to pay for createDonation tx
     await rechargeWallet(connection, creatorWallet.publicKey, 1000000000);
     const creatorWalletBalance = await connection.getBalance(creatorWallet.publicKey);
-    console.log(`creatorWalletBalance: ${creatorWalletBalance}`);
-  })
 
-  it("creates a donation", async () => {
     const amount = new anchor.BN(1000000000); // 1000$
     const ipfsHash = "some_ipfs_hash";
     const endingTimestamp = await getNowTs(provider) + 100000;
-    const donationData = anchor.web3.Keypair.generate();
     const [holdingWalletOwnerPubkey, holdingWalletOwnerBump] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from(HOLDING_PREFIX),
@@ -150,7 +154,7 @@ describe("donaproto", () => {
       program.programId,
     );
 
-    const holdingWallet = await getOrCreateAssociatedTokenAccount(
+    donationHoldingWallet = await getOrCreateAssociatedTokenAccount(
       connection,
       payer,
       donationMintPubKey,
@@ -167,7 +171,7 @@ describe("donaproto", () => {
         accounts: {
           donationData: donationData.publicKey,
           donationProtocol: donationProtocolData.publicKey,
-          holdingWallet: holdingWallet.address,
+          holdingWallet: donationHoldingWallet.address,
           holdingWalletOwner: holdingWalletOwnerPubkey,
           recipient: creatorDonationTokenAccount.address,
           creatorData: creatorDataPubkey,
@@ -188,59 +192,139 @@ describe("donaproto", () => {
     assert.equal(onchainDonationData.isClosed, false);
     assert.deepEqual(onchainDonationData.recipient.toString(), creatorDonationTokenAccount.address.toString());
     assert.deepEqual(onchainDonationData.donationProtocol, donationProtocolData.publicKey);
-    assert.deepEqual(onchainDonationData.holdingWallet, holdingWallet.address);
+    assert.deepEqual(onchainDonationData.holdingWallet, donationHoldingWallet.address);
     assert.deepEqual(onchainDonationData.creatorData, creatorDataPubkey);
     assert.equal(onchainDonationData.holdingBump, holdingWalletOwnerBump);
     assert.equal(onchainDonationData.ipfsHash, ipfsHash);
   });
 
-  it("fails to create a donation if ending timestamp in the past", async () => {
-    const amount = new anchor.BN(1000000000); // 1000$
-    const ipfsHash = "some_ipfs_hash";
-    const endingTimestamp = await getNowTs(provider) - 1;
-    const donationData = anchor.web3.Keypair.generate();
-    const [holdingWalletOwnerPubkey, holdingWalletOwnerBump] = anchor.web3.PublicKey.findProgramAddressSync(
+  it("donates and earns reward", async () => {
+    await rechargeWallet(connection, contributorWallet.publicKey, 1000000000);
+    const [contributorDataPubkey, contributorDataBump] = anchor.web3.PublicKey.findProgramAddressSync(
       [
-        Buffer.from(HOLDING_PREFIX),
-        donationData.publicKey.toBuffer(),
+        Buffer.from(CONTRIBUTOR_PREFIX),
+        donationProtocolData.publicKey.toBuffer(),
+        contributorWallet.publicKey.toBuffer(),
       ],
       program.programId,
     );
+    await program.rpc.initializeContributor(
+      contributorDataBump,
+      {
+        accounts: {
+          contributorData: contributorDataPubkey,
+          donationProtocol: donationProtocolData.publicKey,
+          contributorWalletAddress: contributorWallet.publicKey,
+          payer: payer.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+          rent: anchor.web3.SYSVAR_RENT_PUBKEY,
+        },
+      },
+    );
 
-    const holdingWallet = await getOrCreateAssociatedTokenAccount(
+    const contributorDonationTokenAccount = await getOrCreateAssociatedTokenAccount(
       connection,
       payer,
       donationMintPubKey,
-      holdingWalletOwnerPubkey,
-      true,
+      contributorWallet.publicKey
+    )
+    await mintTo(
+      connection,
+      payer,
+      donationMintPubKey,
+      contributorDonationTokenAccount.address,
+      donationMintAuthority,
+      10000000000, // 10000$
+    )
+
+    const contributorRewardTokenAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      payer,
+      rewardsMintPubKey,
+      contributorWallet.publicKey
+    )
+
+    // when treasury has not enough reward, contributor can't earn reward
+    // but can donate
+    const amount = new anchor.BN(1000000); // 1000$
+    await program.rpc.donate(
+      amount,
+      {
+        accounts: {
+          donationData: donationData.publicKey,
+          contributorData: contributorDataPubkey,
+          donationProtocol: donationProtocolData.publicKey,
+          userTokenWallet: contributorDonationTokenAccount.address,
+          userRewardTokenWallet: contributorRewardTokenAccount.address,
+          rewardTreasury: treasuryTokenAccount.address,
+          rewardTreasuryOwner: treasuryOwnerPubkey,
+          holdingWallet: donationHoldingWallet.address,
+          donationMint: donationMintPubKey,
+          rewardMint: rewardsMintPubKey,
+          userWallet: contributorWallet.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        },
+        signers: [contributorWallet],
+      }
     );
 
-    try {
-      await program.rpc.createDonation(
-        amount,
-        ipfsHash,
-        new anchor.BN(endingTimestamp),
-        holdingWalletOwnerBump,
-        {
-          accounts: {
-            donationData: donationData.publicKey,
-            donationProtocol: donationProtocolData.publicKey,
-            holdingWallet: holdingWallet.address,
-            holdingWalletOwner: holdingWalletOwnerPubkey,
-            recipient: creatorDonationTokenAccount.address,
-            creatorData: creatorDataPubkey,
-            donationMint: donationMintPubKey,
-            creatorWalletAddress: creatorWallet.publicKey,
-            systemProgram: anchor.web3.SystemProgram.programId,
-            rent: anchor.web3.SYSVAR_RENT_PUBKEY,
-          },
-          signers: [donationData, creatorWallet],
-        }
-      );
-    } catch (error) {
-      assert.equal(error.toString(), "AnchorError occurred. Error Code: InvalidEndingTimestamp. Error Number: 6000. Error Message: Invalid ending timestamp.");
-    }
-  });
+    let balanceDonationHoldingWallet = await connection.getTokenAccountBalance(donationHoldingWallet.address);
+    assert.equal(balanceDonationHoldingWallet.value.amount, amount.toString());
+    let balanceContributorRewardTokenAccount = await connection.getTokenAccountBalance(contributorRewardTokenAccount.address);
+    assert.equal(balanceContributorRewardTokenAccount.value.amount, "0");
 
-  // TODO: add ipfs len validaion test
+    let onchainDonationData = await program.account.donationData.fetch(donationData.publicKey);
+    assert.equal(onchainDonationData.totalAmountReceived.toString(), amount.toString());
+    assert.equal(onchainDonationData.isClosed, false);
+
+    let onchainContributorData = await program.account.contributorData.fetch(contributorDataPubkey);
+    assert.equal(onchainContributorData.totalAmountDonated.toString(), amount.toString());
+    assert.equal(onchainContributorData.totalAmountEarned.toString(), 0);
+    assert.equal(onchainContributorData.donationsCount.toString(), 1);
+
+    // when treasury has anough reward, contributor can earn reward
+    await mintTo(
+      connection,
+      payer,
+      rewardsMintPubKey,
+      treasuryTokenAccount.address,
+      rewardMintAuthority,
+      10000000000, // 10000$
+    )
+
+    await program.rpc.donate(
+      amount,
+      {
+        accounts: {
+          donationData: donationData.publicKey,
+          contributorData: contributorDataPubkey,
+          donationProtocol: donationProtocolData.publicKey,
+          userTokenWallet: contributorDonationTokenAccount.address,
+          userRewardTokenWallet: contributorRewardTokenAccount.address,
+          rewardTreasury: treasuryTokenAccount.address,
+          rewardTreasuryOwner: treasuryOwnerPubkey,
+          holdingWallet: donationHoldingWallet.address,
+          donationMint: donationMintPubKey,
+          rewardMint: rewardsMintPubKey,
+          userWallet: contributorWallet.publicKey,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        },
+        signers: [contributorWallet],
+      }
+    );
+
+    balanceDonationHoldingWallet = await connection.getTokenAccountBalance(donationHoldingWallet.address);
+    assert.equal(balanceDonationHoldingWallet.value.amount, amount.muln(2).toString());
+    balanceContributorRewardTokenAccount = await connection.getTokenAccountBalance(contributorRewardTokenAccount.address);
+    assert.equal(balanceContributorRewardTokenAccount.value.amount, "10000");
+
+    onchainDonationData = await program.account.donationData.fetch(donationData.publicKey);
+    assert.equal(onchainDonationData.totalAmountReceived.toString(), amount.muln(2).toString());
+    assert.equal(onchainDonationData.isClosed, false);
+
+    onchainContributorData = await program.account.contributorData.fetch(contributorDataPubkey);
+    assert.equal(onchainContributorData.totalAmountDonated.toString(), amount.muln(2).toString());
+    assert.equal(onchainContributorData.totalAmountEarned.toString(), "10000");
+    assert.equal(onchainContributorData.donationsCount.toString(), 2);
+  });
 });

@@ -95,9 +95,7 @@ pub mod donaproto {
         amount: u64,
     ) -> Result<()> {
         let donation_data = &mut ctx.accounts.donation_data;
-        let contributor_data = &mut ctx.accounts.contributor_data;
-        let donation_protocol = &ctx.accounts.donation_protocol;
-
+        
         if donation_data.is_closed {
             return Err(DonationError::DonationClosed.into());
         }
@@ -123,9 +121,11 @@ pub mod donaproto {
             amount,
         )?;
 
-        donation_data.total_amount_received.checked_add(amount).unwrap();
-        contributor_data.total_amount_donated.checked_add(amount).unwrap();
-        contributor_data.donations_count.checked_add(1).unwrap();
+        let contributor_data = &mut ctx.accounts.contributor_data;
+        donation_data.total_amount_received = donation_data.total_amount_received.checked_add(amount).unwrap();
+        contributor_data.total_amount_donated = contributor_data.total_amount_donated.checked_add(amount).unwrap();
+        contributor_data.donations_count = contributor_data.donations_count.checked_add(1).unwrap();
+        let donation_protocol = &ctx.accounts.donation_protocol;
 
         if amount >= donation_protocol.min_amount_to_earn {
             // TODO: add calculation for reward amount
@@ -156,6 +156,7 @@ pub mod donaproto {
                     ),
                     reward_amount,
                 )?;
+                contributor_data.total_amount_earned = contributor_data.total_amount_earned.checked_add(reward_amount).unwrap();
             }
 
         }
