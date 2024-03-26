@@ -12,4 +12,6 @@ pub enum DonationError {
     DonationAmountZero,
     #[msg("Donation not ended")]
     DonationNotEnded,
+    #[msg("Ipfs hash too long")]
+    IpfsHashTooLong,
 }
