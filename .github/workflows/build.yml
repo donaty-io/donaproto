@@ -21,6 +21,12 @@
             override: true
             components: rustfmt, clippy
 
+        - name: Install Solana
+          run: |
+            sudo apt-get update
+            sudo apt-get install -y libssl-dev libudev-dev zlib1g-dev llvm clang
+            curl -sSf https://release.solana.com/v${{ env.SOLANA_VERSION }}/install | sh
+
         - name: Install Anchor
           run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
 
