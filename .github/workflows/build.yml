@@ -1,47 +1,16 @@
----
-  name: Solana_Build
-  
-  on: [push]
-  
-  jobs:
-    Test:
-      runs-on: [ubuntu-22.04]
-      env:
-        RUST_VERSION: 1.77.0
-        SOLANA_VERSION: 1.18.8
+name: anchor-test
+on:
+  push:
+    branches:
+      - main
+  pull_request:
 
-      steps:
-        - name: Checkout
-          uses: actions/checkout@v3
-
-        - name: Setup Rust
-          uses: actions-rs/toolchain@v1
-          with:
-            toolchain: ${{ env.RUST_VERSION }}
-            override: true
-            components: rustfmt, clippy
-
-        - name: Install Solana
-          uses: metadaoproject/setup-solana@v1.0
-          with: 
-            solana-cli-version: ${{ env.SOLANA_VERSION }}
-
-        # - name: Install Solana
-        #   run: |
-        #     sudo apt-get update
-        #     sudo apt-get install -y libssl-dev libudev-dev zlib1g-dev llvm clang
-        #     curl -sSf https://release.solana.com/v${{ env.SOLANA_VERSION }}/install | sh
-        #     solana config set --url localhost
-        #     solana-keygen new
-        #     sudo apt-get update
-
-        - name: Generate new keygen
-          run: |
-            solana --version
-            solana config set --url localhost
-
-        - name: Install Anchor
-          run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
-
-        - name: Build
-          run: anchor build
+jobs:
+  run-anchor-test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: metadaoproject/anchor-test@v2.1
+        with:
+            anchor-version: '0.29.0'
+            solana-cli-version: '1.18.8'
