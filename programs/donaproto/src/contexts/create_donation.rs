@@ -3,6 +3,8 @@ use std::mem;
 use crate::{common::DISCRIMINATOR_LEN, CreatorData, DonationProtocolData, CREATOR_PREFIX};
 use anchor_spl::token::{Mint, TokenAccount};
 
+pub const HOLDING_PREFIX: &str = "holding";
+
 #[account]
 #[derive(Default)]
 pub struct DonationData {
@@ -13,6 +15,7 @@ pub struct DonationData {
     pub recipient: Pubkey,
     pub donation_protocol: Pubkey,
     pub holding_wallet: Pubkey,
+    pub creator_data: Pubkey,
     pub holding_bump: u8,
     pub ipfs_hash: String,
 }
@@ -26,6 +29,9 @@ impl DonationData {
   const IS_CLOSED_LEN: usize = mem::size_of::<bool>();
   const RECIPIENT_LEN: usize = mem::size_of::<Pubkey>();
   const DONATION_PROTOCOL_LEN: usize = mem::size_of::<Pubkey>();
+  const HOLDING_WALLET_LEN: usize = mem::size_of::<Pubkey>();
+  const CREATOR_DATA_LEN: usize = mem::size_of::<Pubkey>();
+  const HOLDING_BUMP_LEN: usize = mem::size_of::<u8>();
   const IPFS_HASH_LEN: usize = MAX_IPFS_HASH_LEN;
 
   const LEN: usize = DISCRIMINATOR_LEN
@@ -35,6 +41,9 @@ impl DonationData {
     + DonationData::IS_CLOSED_LEN
     + DonationData::RECIPIENT_LEN
     + DonationData::DONATION_PROTOCOL_LEN
+    + DonationData::HOLDING_WALLET_LEN
+    + DonationData::CREATOR_DATA_LEN
+    + DonationData::HOLDING_BUMP_LEN
     + DonationData::IPFS_HASH_LEN;
 }
 
@@ -55,7 +64,7 @@ pub struct CreateDonation<'info> {
   pub holding_wallet: Account<'info, TokenAccount>,
   #[account(
     seeds = [
-      "holding".as_bytes(), 
+      HOLDING_PREFIX.as_bytes(), 
       donation_data.to_account_info().key.as_ref(),
     ],
     bump,

@@ -10,4 +10,6 @@ pub enum DonationError {
     DonationClosed,
     #[msg("Donation amount can not be zero")]
     DonationAmountZero,
+    #[msg("Donation not ended")]
+    DonationNotEnded,
 }

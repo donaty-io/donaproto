@@ -20,7 +20,7 @@ pub mod donaproto {
         treasury_owner_bump: u8,
     ) -> Result<()> {
         let donation_data = &mut ctx.accounts.donation_protocol_data;
-        donation_data.treasury_mint = ctx.accounts.token_mint.key();
+        donation_data.treasury_mint = ctx.accounts.treasury_mint.key();
         donation_data.treasury = ctx.accounts.treasury.key();
         donation_data.donation_mint = ctx.accounts.donation_mint.key();
         donation_data.min_amount_to_earn = min_amount_to_earn;
@@ -66,6 +66,10 @@ pub mod donaproto {
         donation_data.holding_wallet = ctx.accounts.holding_wallet.key();
         donation_data.holding_bump = holding_bump;
         donation_data.ipfs_hash = ipfs_hash;
+
+        let creator_data = &mut ctx.accounts.creator_data;
+        creator_data.total_amount_collecting.checked_add(amount).unwrap();
+        creator_data.donations_created_count.checked_add(1).unwrap();
 
         Ok(())
     }
@@ -139,6 +143,51 @@ pub mod donaproto {
             }
 
         }
+
+        Ok(())
+    }
+
+    pub fn withdraw_funds(
+        ctx: Context<WithdrawFunds>,
+    ) -> Result<()> {
+        let donation_data = &mut ctx.accounts.donation_data;
+
+        if donation_data.is_closed {
+            return Err(DonationError::DonationClosed.into());
+        }
+
+        if donation_data.ending_timestamp > SystemTime::now().duration_since(UNIX_EPOCH).expect("Solana Time error").as_secs() {
+            return Err(DonationError::DonationNotEnded.into());
+        }
+
+        // Transfer amount from donation holding wallet to recipient
+        let seeds = &[
+            HOLDING_PREFIX.as_bytes(),
+            donation_data.to_account_info().key.as_ref(),
+            &[donation_data.holding_bump],
+        ];
+        let signer = &[&seeds[..]];
+        token::transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info().clone(),
+                Transfer {
+                    from: ctx.accounts.holding_wallet.to_account_info().clone(),
+                    to: ctx.accounts.recipient_token_wallet.to_account_info().clone(),
+                    authority: ctx
+                        .accounts
+                        .holding_wallet_owner
+                        .to_account_info()
+                        .clone(),
+                },
+                signer,
+            ),
+            donation_data.total_amount_received,
+        )?;
+
+        let creator_data = &mut ctx.accounts.creator_data;
+        creator_data.total_amount_received.checked_add(donation_data.total_amount_received).unwrap();
+        creator_data.donations_closed_count.checked_add(1).unwrap();
+        donation_data.is_closed = true;
 
         Ok(())
     }
