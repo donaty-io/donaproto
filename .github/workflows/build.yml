@@ -26,16 +26,16 @@
           with: 
             solana-cli-version: ${{ env.SOLANA_VERSION }}
 
-        - name: Check Solana Version
-          run: |
-            solana --version
-            solana config set --url localhost
+        # - name: Check Solana Version
+        #   run: |
+        #     solana --version
+        #     solana config set --url localhost
 
         - name: Install Anchor
           run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
 
-        - name: Build
-          run: anchor build
+        # - name: Build
+        #   run: anchor build
 
         # TODO: fix keypair issue (generate and detect by anchor)
         - name: Anchor Tests
