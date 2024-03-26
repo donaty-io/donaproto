@@ -37,5 +37,7 @@
         - name: Build
           run: anchor build
 
-        - name: Test
-          run: anchor test
+        # TODO: fix keypair issue (generate and detect by anchor)
+        - name: Anchor Tests
+          run: |
+            ./ci/build-and-test.sh  
