@@ -8,7 +8,7 @@ pub mod errors;
 
 use crate::errors::DonationError;
 
-declare_id!("8o6xeX4NsYXwbwJCdeG7g4dbrQ1V98JtS9qwFWgWfYay");
+declare_id!("5HZRPHtJPhD5MvG1Sv71NwuiN5F51wXjnSQeey95chpA");
 
 #[program]
 pub mod donaproto {
@@ -25,6 +25,20 @@ pub mod donaproto {
         donation_data.donation_mint = ctx.accounts.donation_mint.key();
         donation_data.min_amount_to_earn = min_amount_to_earn;
         donation_data.treasury_owner_bump = treasury_owner_bump;
+
+        Ok(())
+    }
+
+    pub fn initialize_creator(
+        ctx: Context<InitializeCreator>,
+    ) -> Result<()> {
+        // TODO: verify bump
+        let creator_data = &mut ctx.accounts.creator_data;
+        creator_data.donation_protocol = ctx.accounts.donation_protocol.key();
+        creator_data.donations_closed_count = 0;
+        creator_data.donations_created_count = 0;
+        creator_data.total_amount_collecting = 0;
+        creator_data.total_amount_received = 0;
 
         Ok(())
     }
