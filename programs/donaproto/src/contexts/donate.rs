@@ -28,10 +28,10 @@ pub struct Donate<'info> {
   pub user_token_wallet: Account<'info, TokenAccount>,
   #[account(mut,
     constraint = user_reward_token_wallet.owner == *user_wallet.key,
-    constraint = user_token_wallet.mint == reward_mint.key(),
+    constraint = user_reward_token_wallet.mint == reward_mint.key(),
   )]
   pub user_reward_token_wallet: Account<'info, TokenAccount>,
-  #[account(
+  #[account(mut,
     constraint = donation_protocol.treasury_mint.key() == reward_mint.key(),
     constraint = reward_treasury.key() == donation_protocol.treasury.key(),
   )]

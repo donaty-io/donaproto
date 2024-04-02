@@ -10,6 +10,8 @@ pub enum DonationError {
     DonationClosed,
     #[msg("Donation amount can not be zero")]
     DonationAmountZero,
-    #[msg("Donation not ended")]
-    DonationNotEnded,
+    #[msg("Donation ending requirements not met")]
+    DonationEndingReqiuirementsNotMet,
+    #[msg("Ipfs hash too long")]
+    IpfsHashTooLong,
 }

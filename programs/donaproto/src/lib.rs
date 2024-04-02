@@ -1,14 +1,13 @@
 use anchor_lang::prelude::*;
 mod contexts;
 use contexts::*;
-use std::time::{SystemTime, UNIX_EPOCH};
 use anchor_spl::token::{self, Transfer};
 
 pub mod errors;
 
 use crate::errors::DonationError;
 
-declare_id!("5HZRPHtJPhD5MvG1Sv71NwuiN5F51wXjnSQeey95chpA");
+declare_id!("6ELhLt25aFjrqiPYfMKerP74iXaytnAcUKtNAWmPi1WW");
 
 #[program]
 pub mod donaproto {
@@ -65,10 +64,12 @@ pub mod donaproto {
         ending_timestamp: u64,
         holding_bump: u8,
     ) -> Result<()> {
-        let now = SystemTime::now();
-        let now_timestamp = now.duration_since(UNIX_EPOCH).expect("Solana Time error").as_secs();
+        let now_timestamp = Clock::get().expect("Time error").unix_timestamp as u64;
         if ending_timestamp <= now_timestamp {
             return Err(DonationError::InvalidEndingTimestamp.into());
+        }
+        if ipfs_hash.len() > MAX_IPFS_HASH_LEN {
+            return Err(DonationError::IpfsHashTooLong.into());
         }
 
         let donation_data = &mut ctx.accounts.donation_data;
@@ -76,14 +77,15 @@ pub mod donaproto {
         donation_data.ending_timestamp = ending_timestamp;
         donation_data.is_closed = false;
         donation_data.recipient = ctx.accounts.recipient.key();
+        donation_data.creator_data = ctx.accounts.creator_data.key();
         donation_data.donation_protocol = ctx.accounts.donation_protocol.key();
         donation_data.holding_wallet = ctx.accounts.holding_wallet.key();
         donation_data.holding_bump = holding_bump;
         donation_data.ipfs_hash = ipfs_hash;
 
         let creator_data = &mut ctx.accounts.creator_data;
-        creator_data.total_amount_collecting.checked_add(amount).unwrap();
-        creator_data.donations_created_count.checked_add(1).unwrap();
+        creator_data.total_amount_collecting = creator_data.total_amount_collecting.checked_add(amount).unwrap();
+        creator_data.donations_created_count = creator_data.donations_created_count.checked_add(1).unwrap();
 
         Ok(())
     }
@@ -93,9 +95,7 @@ pub mod donaproto {
         amount: u64,
     ) -> Result<()> {
         let donation_data = &mut ctx.accounts.donation_data;
-        let contributor_data = &mut ctx.accounts.contributor_data;
-        let donation_protocol = &ctx.accounts.donation_protocol;
-
+        
         if donation_data.is_closed {
             return Err(DonationError::DonationClosed.into());
         }
@@ -121,9 +121,11 @@ pub mod donaproto {
             amount,
         )?;
 
-        donation_data.total_amount_received.checked_add(amount).unwrap();
-        contributor_data.total_amount_donated.checked_add(amount).unwrap();
-        contributor_data.donations_count.checked_add(1).unwrap();
+        let contributor_data = &mut ctx.accounts.contributor_data;
+        donation_data.total_amount_received = donation_data.total_amount_received.checked_add(amount).unwrap();
+        contributor_data.total_amount_donated = contributor_data.total_amount_donated.checked_add(amount).unwrap();
+        contributor_data.donations_count = contributor_data.donations_count.checked_add(1).unwrap();
+        let donation_protocol = &ctx.accounts.donation_protocol;
 
         if amount >= donation_protocol.min_amount_to_earn {
             // TODO: add calculation for reward amount
@@ -154,8 +156,8 @@ pub mod donaproto {
                     ),
                     reward_amount,
                 )?;
+                contributor_data.total_amount_earned = contributor_data.total_amount_earned.checked_add(reward_amount).unwrap();
             }
-
         }
 
         Ok(())
@@ -170,8 +172,9 @@ pub mod donaproto {
             return Err(DonationError::DonationClosed.into());
         }
 
-        if donation_data.ending_timestamp > SystemTime::now().duration_since(UNIX_EPOCH).expect("Solana Time error").as_secs() {
-            return Err(DonationError::DonationNotEnded.into());
+        if donation_data.ending_timestamp > Clock::get().expect("Time error").unix_timestamp as u64
+          && donation_data.total_amount_received < donation_data.amount_collecting {
+            return Err(DonationError::DonationEndingReqiuirementsNotMet.into());
         }
 
         // Transfer amount from donation holding wallet to recipient
@@ -199,8 +202,8 @@ pub mod donaproto {
         )?;
 
         let creator_data = &mut ctx.accounts.creator_data;
-        creator_data.total_amount_received.checked_add(donation_data.total_amount_received).unwrap();
-        creator_data.donations_closed_count.checked_add(1).unwrap();
+        creator_data.total_amount_received = creator_data.total_amount_received.checked_add(donation_data.total_amount_received).unwrap();
+        creator_data.donations_closed_count = creator_data.donations_closed_count.checked_add(1).unwrap();
         donation_data.is_closed = true;
 
         Ok(())
