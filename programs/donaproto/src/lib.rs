@@ -16,6 +16,7 @@ pub mod donaproto {
     pub fn initialize_donation_protocol(
         ctx: Context<InitializeDonationProtocol>,
         min_amount_to_earn: u64,
+        min_amount_to_collect: u64,
         treasury_owner_bump: u8,
     ) -> Result<()> {
         let donation_data = &mut ctx.accounts.donation_protocol_data;
@@ -24,6 +25,7 @@ pub mod donaproto {
         donation_data.donation_mint = ctx.accounts.donation_mint.key();
         donation_data.min_amount_to_earn = min_amount_to_earn;
         donation_data.treasury_owner_bump = treasury_owner_bump;
+        donation_data.min_amount_to_collect = min_amount_to_collect;
 
         Ok(())
     }
@@ -70,6 +72,9 @@ pub mod donaproto {
         }
         if ipfs_hash.len() > MAX_IPFS_HASH_LEN {
             return Err(DonationError::IpfsHashTooLong.into());
+        }
+        if amount < ctx.accounts.donation_protocol.min_amount_to_collect {
+            return Err(DonationError::DonationAmountTooLow.into());
         }
 
         let donation_data = &mut ctx.accounts.donation_data;
@@ -130,7 +135,7 @@ pub mod donaproto {
         if amount >= donation_protocol.min_amount_to_earn {
             // TODO: add calculation for reward amount
             let reward_treasury_balance = ctx.accounts.reward_treasury.amount;
-            let mut reward_amount = amount.checked_div(100).unwrap();
+            let mut reward_amount = amount;
             if reward_amount > reward_treasury_balance {
                 reward_amount = reward_treasury_balance.checked_div(100).unwrap();
             }
