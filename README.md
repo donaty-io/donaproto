@@ -24,3 +24,8 @@ $ solana-keygen new
 ```
 $ anchor test
 ```
+
+### Deploy Program
+```
+$ anchor deploy --program-name donaproto --provider.cluster devnet --provider.wallet /path_to_authority_keypair/private_key.json 
+```
