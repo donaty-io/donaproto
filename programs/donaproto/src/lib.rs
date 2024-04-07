@@ -7,7 +7,7 @@ pub mod errors;
 
 use crate::errors::DonationError;
 
-declare_id!("6ELhLt25aFjrqiPYfMKerP74iXaytnAcUKtNAWmPi1WW");
+declare_id!("HbNNG85aBuR9W5F8YobTeDRRmXWFbDhLDS6WbLzWbLhH");
 
 #[program]
 pub mod donaproto {
