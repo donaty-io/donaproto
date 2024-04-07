@@ -47,6 +47,7 @@ describe("donaproto", () => {
     program.programId,
   );
   let contributorDonationTokenAccount, contributorRewardTokenAccount;
+  const minAmountToCollect = new anchor.BN(1_000_000);
 
   before(async () => {
     donationMintPubKey = await createMint(
@@ -85,6 +86,7 @@ describe("donaproto", () => {
 
     await program.rpc.initializeDonationProtocol(
       minAmountToEarn,
+      minAmountToCollect,
       treasuryOwnerBump,
       {
         accounts: {

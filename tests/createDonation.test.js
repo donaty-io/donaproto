@@ -30,6 +30,7 @@ describe("donaproto", () => {
   const creatorWallet = anchor.web3.Keypair.generate();
   let creatorDataPubkey, creatorDataBump;
   let creatorDonationTokenAccount;
+  const minAmountToCollect = new anchor.BN(1_000_000);
 
   before(async () => {
     donationMintPubKey = await createMint(
@@ -66,6 +67,7 @@ describe("donaproto", () => {
 
     await program.rpc.initializeDonationProtocol(
       minAmountToEarn,
+      minAmountToCollect,
       treasuryOwnerBump,
       {
         accounts: {

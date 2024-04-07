@@ -21,6 +21,7 @@ describe("donaproto", () => {
   let donationMintPubKey, rewardsMintPubKey
   const rewardMintAuthority = payer;
   const rewardMintDecimals = 9;
+  const minAmountToCollect = new anchor.BN(1_000_000);
 
   before(async () => {
     donationMintPubKey = await createMint(
@@ -62,6 +63,7 @@ describe("donaproto", () => {
 
     const tx = await program.rpc.initializeDonationProtocol(
       minAmountToEarn,
+      minAmountToCollect,
       treasuryOwnerBump,
       {
         accounts: {

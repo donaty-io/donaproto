@@ -36,6 +36,7 @@ describe("donaproto", () => {
   const contributorWallet = anchor.web3.Keypair.generate();
   let treasuryTokenAccount, treasuryOwnerPubkey, treasuryOwnerBump;
   let donationHoldingWallet;
+  const minAmountToCollect = new anchor.BN(1_000_000);
 
   before(async () => {
     donationMintPubKey = await createMint(
@@ -74,6 +75,7 @@ describe("donaproto", () => {
 
     await program.rpc.initializeDonationProtocol(
       minAmountToEarn,
+      minAmountToCollect,
       treasuryOwnerBump,
       {
         accounts: {
@@ -103,7 +105,7 @@ describe("donaproto", () => {
       donationMintPubKey,
       creatorDonationTokenAccount.address,
       donationMintAuthority,
-      10000000000
+      10_000_000_000
     )
 
     const [creatorDataPubkeyFound, creatorDataBumpFound] = anchor.web3.PublicKey.findProgramAddressSync(
@@ -140,12 +142,12 @@ describe("donaproto", () => {
     assert.equal(onchainCreatorData.totalAmountCollecting, 0);
 
     // top up creator wallet to be able to pay for createDonation tx
-    await rechargeWallet(connection, creatorWallet.publicKey, 1000000000);
+    await rechargeWallet(connection, creatorWallet.publicKey, 10_00_000_000);
     const creatorWalletBalance = await connection.getBalance(creatorWallet.publicKey);
 
-    const amount = new anchor.BN(1000000000); // 1000$
+    const amount = new anchor.BN(1_000_000_000); // 1000$
     const ipfsHash = "some_ipfs_hash";
-    const endingTimestamp = await getNowTs(provider) + 100000;
+    const endingTimestamp = await getNowTs(provider) + 100_000;
     const [holdingWalletOwnerPubkey, holdingWalletOwnerBump] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from(HOLDING_PREFIX),
@@ -199,7 +201,7 @@ describe("donaproto", () => {
   });
 
   it("donates and earns reward", async () => {
-    await rechargeWallet(connection, contributorWallet.publicKey, 1000000000);
+    await rechargeWallet(connection, contributorWallet.publicKey, 1_000_000_000);
     const [contributorDataPubkey, contributorDataBump] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from(CONTRIBUTOR_PREFIX),
@@ -234,7 +236,7 @@ describe("donaproto", () => {
       donationMintPubKey,
       contributorDonationTokenAccount.address,
       donationMintAuthority,
-      10000000000, // 10000$
+      10_000_000_000, // 10000$
     )
 
     const contributorRewardTokenAccount = await getOrCreateAssociatedTokenAccount(
@@ -246,7 +248,7 @@ describe("donaproto", () => {
 
     // when treasury has not enough reward, contributor can't earn reward
     // but can donate
-    const amount = new anchor.BN(1000000); // 1000$
+    const amount = new anchor.BN(1_000_000); // 1000$
     await program.rpc.donate(
       amount,
       {
@@ -289,7 +291,7 @@ describe("donaproto", () => {
       rewardsMintPubKey,
       treasuryTokenAccount.address,
       rewardMintAuthority,
-      10000000000, // 10000$
+      10_000_000_000, // 10000$
     )
 
     await program.rpc.donate(
@@ -316,7 +318,7 @@ describe("donaproto", () => {
     balanceDonationHoldingWallet = await connection.getTokenAccountBalance(donationHoldingWallet.address);
     assert.equal(balanceDonationHoldingWallet.value.amount, amount.muln(2).toString());
     balanceContributorRewardTokenAccount = await connection.getTokenAccountBalance(contributorRewardTokenAccount.address);
-    assert.equal(balanceContributorRewardTokenAccount.value.amount, "10000");
+    assert.equal(balanceContributorRewardTokenAccount.value.amount, "1000000");
 
     onchainDonationData = await program.account.donationData.fetch(donationData.publicKey);
     assert.equal(onchainDonationData.totalAmountReceived.toString(), amount.muln(2).toString());
@@ -324,7 +326,7 @@ describe("donaproto", () => {
 
     onchainContributorData = await program.account.contributorData.fetch(contributorDataPubkey);
     assert.equal(onchainContributorData.totalAmountDonated.toString(), amount.muln(2).toString());
-    assert.equal(onchainContributorData.totalAmountEarned.toString(), "10000");
+    assert.equal(onchainContributorData.totalAmountEarned.toString(), "1000000");
     assert.equal(onchainContributorData.donationsCount.toString(), 2);
   });
 });
