@@ -5,7 +5,7 @@ seeds = false
 skip-lint = false
 
 [programs.localnet]
-donaproto = "5HZRPHtJPhD5MvG1Sv71NwuiN5F51wXjnSQeey95chpA"
+donaproto = "6ELhLt25aFjrqiPYfMKerP74iXaytnAcUKtNAWmPi1WW"
 
 [registry]
 url = "https://api.apr.dev"
