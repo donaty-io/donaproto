@@ -3,6 +3,10 @@
 The donation protocol implements on-chain creation of donation, contributor, creator data.
 People who donate are eligible to receive token rewards.
 
+## Protocol data design
+![Solana Donation](https://github.com/donaty-io/donaproto/assets/3645723/5773ddc5-f67f-4765-9f58-f342890f12d1)
+
+
 
 # Environment Setup
 
