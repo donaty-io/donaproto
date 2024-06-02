@@ -39,5 +39,5 @@
         - name: Install JS Dependencies
           run: yarn install
   
-        - name: JS E2E Tests
+        - name: JS Tests
           run: anchor test
