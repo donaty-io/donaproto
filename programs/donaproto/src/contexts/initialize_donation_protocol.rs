@@ -3,6 +3,8 @@ use anchor_spl::token::{Mint, TokenAccount};
 use std::mem;
 use crate::common::DISCRIMINATOR_LEN;
 
+pub const TREASURY_PREFIX: &str = "treasury";
+
 #[account]
 #[derive(Default)]
 pub struct DonationProtocolData {
@@ -10,6 +12,7 @@ pub struct DonationProtocolData {
     pub treasury: Pubkey,
     pub donation_mint: Pubkey,
     pub min_amount_to_earn: u64,
+    pub min_amount_to_collect: u64,
     pub treasury_owner_bump: u8
 }
 
@@ -18,12 +21,14 @@ impl DonationProtocolData {
   const TREASURY_LEN: usize = mem::size_of::<Pubkey>();
   const DONATION_MINT_LEN: usize = mem::size_of::<Pubkey>();
   const MIN_AMOUNT_TO_EARN_LEN: usize = mem::size_of::<u64>();
+  const MIN_AMOUNT_TO_COLLECT_LEN: usize = mem::size_of::<u64>();
   const TREASURY_OWNER_BUMP_LEN: usize = mem::size_of::<u8>();
   pub const LEN: usize = DISCRIMINATOR_LEN
     + DonationProtocolData::TREASURY_MINT_LEN
     + DonationProtocolData::TREASURY_LEN
     + DonationProtocolData::DONATION_MINT_LEN
     + DonationProtocolData::MIN_AMOUNT_TO_EARN_LEN
+    + DonationProtocolData::MIN_AMOUNT_TO_COLLECT_LEN
     + DonationProtocolData::TREASURY_OWNER_BUMP_LEN;
 }
 
@@ -34,16 +39,16 @@ pub struct InitializeDonationProtocol<'info> {
 
   #[account(
     constraint = treasury.owner == *treasury_owner.key,
-    constraint = treasury.mint == token_mint.key(),
+    constraint = treasury.mint == treasury_mint.key(),
   )]
   pub treasury: Account<'info, TokenAccount>,
   #[account(
-    seeds = ["treasury".as_bytes(), donation_protocol_data.key().as_ref()],
+    seeds = [TREASURY_PREFIX.as_bytes(), donation_protocol_data.key().as_ref()],
     bump,
   )]
   /// CHECK: pda account ["treasury", donation_protocol_data]
   pub treasury_owner: AccountInfo<'info>,
-  pub token_mint: Account<'info, Mint>,
+  pub treasury_mint: Account<'info, Mint>,
   pub donation_mint: Account<'info, Mint>,
   #[account(mut)]
   pub payer: Signer<'info>,
