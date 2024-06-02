@@ -9,6 +9,7 @@
       env:
         RUST_VERSION: 1.77.0
         SOLANA_VERSION: 1.18.8
+        ANCHOR_VERSION: 0.29.0
 
       steps:
         - name: Checkout
@@ -25,19 +26,18 @@
           uses: metadaoproject/setup-solana@v1.0
           with: 
             solana-cli-version: ${{ env.SOLANA_VERSION }}
-
-        # - name: Check Solana Version
-        #   run: |
-        #     solana --version
-        #     solana config set --url localhost
+        
+        - name: Generate Key
+          run: solana-keygen new --no-passphrase
 
         - name: Install Anchor
-          run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
+          run: cargo install --git https://github.com/coral-xyz/anchor --tag v${{ env.ANCHOR_VERSION }} anchor-cli --locked
 
         - name: Build
           run: anchor build
 
-        # TODO: fix keypair generation issue (generate and detect by anchor)
-        # - name: Anchor Tests
-        #   run: |
-        #     ./ci/build-and-test.sh  
+        - name: Install JS Dependencies
+          run: yarn install
+  
+        - name: JS E2E Tests
+          run: anchor test
