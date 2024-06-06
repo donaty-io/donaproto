@@ -1,6 +1,5 @@
 pub mod initialize_donation_protocol;
 pub use initialize_donation_protocol::*;
-pub mod common;
 pub mod initialize_contributor;
 pub use initialize_contributor::*;
 pub mod create_donation;
