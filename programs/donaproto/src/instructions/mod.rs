@@ -10,3 +10,7 @@ pub mod donate;
 pub use donate::*;
 pub mod withdraw_funds;
 pub use withdraw_funds::*;
+pub mod authorize_pool;
+pub use authorize_pool::*;
+pub mod authorize_clmm;
+pub use authorize_clmm::*;

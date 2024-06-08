@@ -1,13 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, TokenAccount};
 
-use crate::states::DonationProtocolData;
+use crate::states::{DonationProtocolData, DISCRIMINATOR_LEN};
 
 pub const TREASURY_PREFIX: &str = "treasury";
 
 #[derive(Accounts)]
 pub struct InitializeDonationProtocol<'info> {
-    #[account(init, payer = payer, space = DonationProtocolData::LEN)]
+    #[account(init, payer = payer, space = DISCRIMINATOR_LEN + DonationProtocolData::INIT_SPACE)]
     pub donation_protocol_data: Account<'info, DonationProtocolData>,
 
     #[account(
@@ -42,6 +42,7 @@ pub fn initialize_donation_protocol(
     donation_data.min_amount_to_earn = min_amount_to_earn;
     donation_data.treasury_owner_bump = treasury_owner_bump;
     donation_data.min_amount_to_collect = min_amount_to_collect;
+    donation_data.authority = *ctx.accounts.payer.key;
 
     Ok(())
 }

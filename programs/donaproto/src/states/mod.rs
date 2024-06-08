@@ -12,3 +12,9 @@ pub use creator_data::*;
 
 pub mod contributor_data;
 pub use contributor_data::*;
+
+pub mod authorized_pool;
+pub use authorized_pool::*;
+
+pub mod authorized_clmm;
+pub use authorized_clmm::*;
