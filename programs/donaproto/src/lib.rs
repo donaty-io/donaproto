@@ -50,4 +50,12 @@ pub mod donaproto {
     pub fn withdraw_funds(ctx: Context<WithdrawFunds>) -> Result<()> {
         instructions::withdraw_funds(ctx)
     }
+
+    pub fn authorize_clmm(ctx: Context<AuthorizeClmm>, program_id: Pubkey) -> Result<()> {
+        instructions::authorize_clmm(ctx, program_id)
+    }
+
+    pub fn authorize_clmm_pool(ctx: Context<AuthorizeClmmPool>) -> Result<()> {
+        instructions::authorize_clmm_pool(ctx)
+    }
 }

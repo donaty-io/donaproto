@@ -11,8 +11,52 @@ donaproto = "HbNNG85aBuR9W5F8YobTeDRRmXWFbDhLDS6WbLzWbLhH"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
+[workspace]
+types = "app/src/idl/"
+
 [scripts]
-test = "yarn run mocha -t 1000000 tests/*"
+test = "yarn run mocha -t 1000000 tests/"
+
+[test]
+startup_wait = 10000
+
+[test.validator]
+url = "https://api.devnet.solana.com"
+
+### Download the program from the mainnet-beta cluster
+# solana program dump --url mainnet-beta TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA token.so
+[[test.genesis]]
+address = "devi51mZmdwUJGU9hjN27vEz64Gps7uUefqxg27EAtH"
+program = "raydium_amm_v3.so"
+upgradeable = true
+
+# CLMM Config
+# {
+#   id: 'GVSwm4smQBYcgAJU7qjFHLQBHTc4AdB3F2HbZp6KqKof',
+#   index: 2,
+#   protocolFeeRate: 120000,
+#   tradeFeeRate: 500,
+#   tickSpacing: 10,
+#   fundFeeRate: 40000,
+# }
+# let (amm_config_key, __bump) = Pubkey::find_program_address(
+#     &[
+#         raydium_amm_v3::states::AMM_CONFIG_SEED.as_bytes(),
+#         &config_index.to_be_bytes(),
+#     ],
+#     &pool_config.raydium_v3_program,
+# );
+[[test.validator.clone]]
+address = 'GVSwm4smQBYcgAJU7qjFHLQBHTc4AdB3F2HbZp6KqKof'
+
+# # AMM Program
+# ALERT! not working 
+# `Transaction simulation failed: This program may not be used for executing instructions`
+# [[test.validator.clone]]
+# address = "devi51mZmdwUJGU9hjN27vEz64Gps7uUefqxg27EAtH"
+# executable = true
+
+
