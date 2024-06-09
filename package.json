@@ -2,7 +2,7 @@
     "scripts": {
         "lint:fix": "prettier */*.js \"*/**/*{.js,.ts}\" -w",
         "lint": "prettier */*.js \"*/**/*{.js,.ts}\" --check",
-        "test": "mocha --timeout 100000000 tests/authorizeClmm.test.js"
+        "test": "mocha --timeout 100000000 tests/"
     },
     "dependencies": {
         "@coral-xyz/anchor": "^0.29.0"
