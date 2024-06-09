@@ -14,6 +14,7 @@ pub struct DonationData {
     pub donation_protocol: Pubkey,
     pub holding_wallet: Pubkey,
     pub creator_data: Pubkey,
+    pub donation_mint: Pubkey,
     pub holding_bump: u8,
     pub ipfs_hash: String,
 }
@@ -29,6 +30,7 @@ impl DonationData {
     const DONATION_PROTOCOL_LEN: usize = mem::size_of::<Pubkey>();
     const HOLDING_WALLET_LEN: usize = mem::size_of::<Pubkey>();
     const CREATOR_DATA_LEN: usize = mem::size_of::<Pubkey>();
+    const DONATION_MINT_LEN: usize = mem::size_of::<Pubkey>();
     const HOLDING_BUMP_LEN: usize = mem::size_of::<u8>();
     const IPFS_HASH_LEN: usize = MAX_IPFS_HASH_LEN;
 
@@ -41,6 +43,7 @@ impl DonationData {
         + DonationData::DONATION_PROTOCOL_LEN
         + DonationData::HOLDING_WALLET_LEN
         + DonationData::CREATOR_DATA_LEN
+        + DonationData::DONATION_MINT_LEN
         + DonationData::HOLDING_BUMP_LEN
         + DonationData::IPFS_HASH_LEN;
 }

@@ -14,3 +14,5 @@ pub mod authorize_pool;
 pub use authorize_pool::*;
 pub mod authorize_clmm;
 pub use authorize_clmm::*;
+pub mod create_donation_v2;
+pub use create_donation_v2::*;

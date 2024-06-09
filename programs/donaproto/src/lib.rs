@@ -4,6 +4,7 @@ use instructions::*;
 
 pub mod errors;
 pub mod states;
+pub mod utils;
 
 declare_id!("HbNNG85aBuR9W5F8YobTeDRRmXWFbDhLDS6WbLzWbLhH");
 
@@ -57,5 +58,15 @@ pub mod donaproto {
 
     pub fn authorize_clmm_pool(ctx: Context<AuthorizeClmmPool>) -> Result<()> {
         instructions::authorize_clmm_pool(ctx)
+    }
+
+    pub fn create_donation_v2(
+        ctx: Context<CreateDonationV2>,
+        amount: u64,
+        ipfs_hash: String,
+        ending_timestamp: u64,
+        holding_bump: u8,
+    ) -> Result<()> {
+        instructions::create_donation_v2(ctx, amount, ipfs_hash, ending_timestamp, holding_bump)
     }
 }
