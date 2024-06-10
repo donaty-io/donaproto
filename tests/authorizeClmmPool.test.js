@@ -8,10 +8,12 @@ const os = require('os');
 const assert = require('assert');
 const { rechargeWallet, loadObjectFromJsonFile } = require("./common/utils");
 const { createPoolState } = require("./common/amm_helper");
+const {
+  TREASURY_PREFIX,
+  AUTHORIZED_CLMM_PREFIX,
+  AUTHORIZED_CLMM_POOL_PREFIX
+} = require("./common/seeds");
 
-const TREASURY_PREFIX = 'treasury';
-const AUTHORIZED_CLMM_PREFIX = 'authorized_clmm';
-const AUTHORIZED_CLMM_POOL_PREFIX = 'authorized_clmm_pool';
 
 const raydiumAmmIdl = loadObjectFromJsonFile('./app/src/idl/raydium-amm.json');
 

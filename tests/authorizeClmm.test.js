@@ -6,9 +6,11 @@ const {
 const os = require('os');
 const assert = require('assert');
 const { rechargeWallet } = require("./common/utils");
+const {
+  TREASURY_PREFIX,
+  AUTHORIZED_CLMM_PREFIX
+} = require("./common/seeds");
 
-const TREASURY_PREFIX = 'treasury';
-const AUTHORIZED_CLMM_PREFIX = 'authorized_clmm';
 
 describe("Authorize CLMM program", () => {
   const homedir = os.homedir();

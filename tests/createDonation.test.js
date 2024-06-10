@@ -7,10 +7,12 @@ const {
 const os = require('os');
 const assert = require('assert');
 const { getNowTs, rechargeWallet } = require('./common/utils');
+const {
+  TREASURY_PREFIX,
+  CREATOR_PREFIX,
+  HOLDING_PREFIX
+} = require("./common/seeds");
 
-const TREASURY_PREFIX = 'treasury';
-const CREATOR_PREFIX = 'creator';
-const HOLDING_PREFIX = 'holding';
 
 describe("donaproto", () => {
   const homedir = os.homedir();
@@ -194,6 +196,7 @@ describe("donaproto", () => {
     assert.deepEqual(onchainDonationData.creatorData, creatorDataPubkey);
     assert.equal(onchainDonationData.holdingBump, holdingWalletOwnerBump);
     assert.equal(onchainDonationData.ipfsHash, ipfsHash);
+    assert.deepEqual(onchainDonationData.donationMint, donationMintPubKey);
   });
 
   it("fails to create a donation if ending timestamp in the past", async () => {

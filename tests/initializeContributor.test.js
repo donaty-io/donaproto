@@ -6,9 +6,8 @@ const {
 } = require('@solana/spl-token');
 const os = require('os');
 const assert = require('assert');
+const { TREASURY_PREFIX, CONTRIBUTOR_PREFIX } = require("./common/seeds");
 
-const TREASURY_PREFIX = 'treasury';
-const CONTRIBUTOR_PREFIX = 'contributor';
 
 describe("donaproto", () => {
   const homedir = os.homedir();
