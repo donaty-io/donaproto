@@ -18,3 +18,5 @@ pub mod create_donation_v2;
 pub use create_donation_v2::*;
 pub mod donate_v2;
 pub use donate_v2::*;
+pub mod withdraw_funds_v2;
+pub use withdraw_funds_v2::*;

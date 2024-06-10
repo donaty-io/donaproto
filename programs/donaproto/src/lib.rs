@@ -73,4 +73,8 @@ pub mod donaproto {
     pub fn donate_v2(ctx: Context<DonateV2>, amount: u64) -> Result<()> {
         instructions::donate_v2(ctx, amount)
     }
+
+    pub fn withdraw_funds_v2(ctx: Context<WithdrawFundsV2>) -> Result<()> {
+        instructions::withdraw_funds_v2(ctx)
+    }
 }
