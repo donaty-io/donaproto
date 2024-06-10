@@ -19,6 +19,7 @@ pub struct AuthorizeClmmPool<'info> {
     pub authorized_clmm_pool: Account<'info, AuthorizedClmmPool>,
     /// DEX pool state with current token pair price
     #[account(
+        owner = authorized_clmm.program_id,
         constraint = (pool_state.load()?.token_mint_0 == donation_protocol.donation_mint && pool_state.load()?.token_mint_1 == donation_amm_mint.key())
             || (pool_state.load()?.token_mint_1 == donation_protocol.donation_mint && pool_state.load()?.token_mint_0 == donation_amm_mint.key()),
         constraint = pool_state.load()?.amm_config == amm_config.key(),
