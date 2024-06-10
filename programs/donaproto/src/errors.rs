@@ -15,5 +15,7 @@ pub enum DonationError {
     #[msg("Ipfs hash too long")]
     IpfsHashTooLong,
     #[msg("Donation amount too low")]
-    DonationAmountTooLow,    
+    DonationAmountTooLow,
+    #[msg("Invalid donation mint")]
+    InvalidDonationMint,
 }

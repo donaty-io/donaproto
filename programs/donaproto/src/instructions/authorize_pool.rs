@@ -45,7 +45,7 @@ pub fn authorize_clmm_pool(ctx: Context<AuthorizeClmmPool>) -> Result<()> {
     let authorized_clmm_pool = &mut ctx.accounts.authorized_clmm_pool;
     authorized_clmm_pool.pool_state = ctx.accounts.pool_state.key();
     authorized_clmm_pool.program_id = ctx.accounts.authorized_clmm.program_id;
-    authorized_clmm_pool.token = ctx.accounts.donation_amm_mint.key();
+    authorized_clmm_pool.mint = ctx.accounts.donation_amm_mint.key();
     authorized_clmm_pool.donation_protocol = ctx.accounts.donation_protocol.key();
 
     Ok(())

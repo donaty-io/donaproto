@@ -41,7 +41,7 @@ describe("Authorize CLMM pool", () => {
   const minAmountToCollect = new anchor.BN(1_000_000);
   const minAmountToEarn = new anchor.BN(1000);
   const donationProtocolData = anchor.web3.Keypair.generate();
-  const [treasuryOwnerPK, treasuryOwnerBump] = anchor.web3.PublicKey.findProgramAddressSync(
+  const [treasuryOwnerPubkey, treasuryOwnerBump] = anchor.web3.PublicKey.findProgramAddressSync(
     [
       Buffer.from(TREASURY_PREFIX),
       donationProtocolData.publicKey.toBuffer(),
@@ -82,7 +82,7 @@ describe("Authorize CLMM pool", () => {
       connection,
       payer,
       rewardsMintPubKey,
-      treasuryOwnerPK,
+      treasuryOwnerPubkey,
       allowOwnerOffCurve = true
     )
 
@@ -94,7 +94,7 @@ describe("Authorize CLMM pool", () => {
         accounts: {
           donationProtocolData: donationProtocolData.publicKey,
           treasury: treasuryTokenAccount.address,
-          treasuryOwner: treasuryOwnerPK,
+          treasuryOwner: treasuryOwnerPubkey,
           treasuryMint: rewardsMintPubKey,
           donationMint: donationMintPubKey,
           payer: payer.publicKey,
@@ -194,6 +194,6 @@ describe("Authorize CLMM pool", () => {
     assert.deepEqual(onchainAuthorizedClmmPool.donationProtocol, donationProtocolData.publicKey);
     assert.deepEqual(onchainAuthorizedClmmPool.poolState, poolStateResult.poolId);
     assert.deepEqual(onchainAuthorizedClmmPool.programId, clmmProgramId);
-    assert.deepEqual(onchainAuthorizedClmmPool.token, newDonationMintPubKey);
+    assert.deepEqual(onchainAuthorizedClmmPool.mint, newDonationMintPubKey);
   });
 });

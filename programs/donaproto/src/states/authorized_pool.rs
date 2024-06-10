@@ -6,6 +6,6 @@ use anchor_lang::prelude::*;
 pub struct AuthorizedClmmPool {
     pub pool_state: Pubkey,
     pub program_id: Pubkey,
-    pub token: Pubkey,
+    pub mint: Pubkey,
     pub donation_protocol: Pubkey,
 }

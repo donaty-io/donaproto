@@ -69,4 +69,8 @@ pub mod donaproto {
     ) -> Result<()> {
         instructions::create_donation_v2(ctx, amount, ipfs_hash, ending_timestamp, holding_bump)
     }
+
+    pub fn donate_v2(ctx: Context<DonateV2>, amount: u64) -> Result<()> {
+        instructions::donate_v2(ctx, amount)
+    }
 }

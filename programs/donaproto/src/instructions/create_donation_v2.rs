@@ -47,6 +47,9 @@ pub struct CreateDonationV2<'info> {
         bump,
     )]
     pub creator_data: Account<'info, CreatorData>,
+    #[account(
+        constraint = authorized_clmm_pool.mint == donation_mint.key(),
+    )]
     pub donation_mint: Account<'info, Mint>,
     pub default_donation_mint: Account<'info, Mint>,
     #[account(

@@ -16,3 +16,5 @@ pub mod authorize_clmm;
 pub use authorize_clmm::*;
 pub mod create_donation_v2;
 pub use create_donation_v2::*;
+pub mod donate_v2;
+pub use donate_v2::*;

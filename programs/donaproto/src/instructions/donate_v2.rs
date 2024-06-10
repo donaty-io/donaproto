@@ -1,14 +1,16 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, TokenAccount, Transfer};
+use raydium_amm_v3::states::PoolState;
 
 use crate::{
     errors::DonationError,
-    states::{ContributorData, DonationData, DonationProtocolData},
-    CONTRIBUTOR_PREFIX, TREASURY_PREFIX,
+    states::{AuthorizedClmmPool, ContributorData, DonationData, DonationProtocolData},
+    utils::calculate_amount,
+    AUTHORIZED_CLMM_POOL_PREFIX, CONTRIBUTOR_PREFIX, TREASURY_PREFIX,
 };
 
 #[derive(Accounts)]
-pub struct Donate<'info> {
+pub struct DonateV2<'info> {
     #[account(mut,
       constraint = donation_data.donation_protocol == donation_protocol.key(),
       constraint = donation_data.holding_wallet == holding_wallet.key(),
@@ -24,6 +26,9 @@ pub struct Donate<'info> {
       bump = contributor_data.bump,
     )]
     pub contributor_data: Account<'info, ContributorData>,
+    #[account(
+      constraint = donation_protocol.donation_mint == default_donation_mint.key(),
+    )]
     pub donation_protocol: Account<'info, DonationProtocolData>,
 
     #[account(mut,
@@ -54,7 +59,7 @@ pub struct Donate<'info> {
     )]
     pub holding_wallet: Account<'info, TokenAccount>,
     #[account(
-      constraint = donation_protocol.donation_mint.key() == donation_mint.key(),
+      constraint = authorized_clmm_pool.mint == donation_mint.key(),
     )]
     pub donation_mint: Account<'info, Mint>,
     #[account(
@@ -62,12 +67,30 @@ pub struct Donate<'info> {
     )]
     pub reward_mint: Account<'info, Mint>,
 
+    pub default_donation_mint: Account<'info, Mint>,
+    #[account(
+        seeds = [
+            AUTHORIZED_CLMM_POOL_PREFIX.as_bytes(),
+            donation_protocol.key().as_ref(),
+            pool_state.key().as_ref(),
+        ],
+        bump,
+        constraint = authorized_clmm_pool.donation_protocol == donation_protocol.key(),
+        constraint = authorized_clmm_pool.pool_state == pool_state.key(),
+    )]
+    pub authorized_clmm_pool: Account<'info, AuthorizedClmmPool>,
+    #[account(
+        constraint = (pool_state.load()?.token_mint_0 == donation_protocol.donation_mint && pool_state.load()?.token_mint_1 == donation_mint.key())
+            || (pool_state.load()?.token_mint_1 == donation_protocol.donation_mint && pool_state.load()?.token_mint_0 == donation_mint.key()),
+    )]
+    pub pool_state: AccountLoader<'info, PoolState>,
+
     #[account(mut)]
     pub user_wallet: Signer<'info>,
     pub token_program: Program<'info, anchor_spl::token::Token>,
 }
 
-pub fn donate(ctx: Context<Donate>, amount: u64) -> Result<()> {
+pub fn donate_v2(ctx: Context<DonateV2>, amount: u64) -> Result<()> {
     let donation_data = &mut ctx.accounts.donation_data;
 
     if donation_data.is_closed {
@@ -78,11 +101,23 @@ pub fn donate(ctx: Context<Donate>, amount: u64) -> Result<()> {
         return Err(DonationError::DonationAmountZero.into());
     }
 
-    if ctx.accounts.donation_mint.key() != ctx.accounts.donation_protocol.donation_mint {
+    if ctx.accounts.donation_protocol.donation_mint == ctx.accounts.donation_mint.key() {
         return Err(DonationError::InvalidDonationMint.into());
     }
 
-    // Transfer amount from user to donation holding wallet
+    let default_donation_mint = &ctx.accounts.default_donation_mint;
+    let donation_mint = &ctx.accounts.donation_mint;
+    let is_default_token_mint_0 = ctx.accounts.pool_state.load()?.token_mint_0
+        == ctx.accounts.donation_protocol.donation_mint;
+    let default_amount = calculate_amount(
+        default_donation_mint.decimals,
+        donation_mint.decimals,
+        amount,
+        ctx.accounts.pool_state.load()?.sqrt_price_x64,
+        is_default_token_mint_0,
+    );
+
+    // Transfer amount from user to donation holding wallet in specific token mints
     token::transfer(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info().clone(),
@@ -102,15 +137,15 @@ pub fn donate(ctx: Context<Donate>, amount: u64) -> Result<()> {
         .unwrap();
     contributor_data.total_amount_donated = contributor_data
         .total_amount_donated
-        .checked_add(amount)
+        .checked_add(default_amount)
         .unwrap();
     contributor_data.donations_count = contributor_data.donations_count.checked_add(1).unwrap();
     let donation_protocol = &ctx.accounts.donation_protocol;
 
-    if amount >= donation_protocol.min_amount_to_earn {
+    if default_amount >= donation_protocol.min_amount_to_earn {
         // TODO: add calculation for reward amount
         let reward_treasury_balance = ctx.accounts.reward_treasury.amount;
-        let mut reward_amount = amount;
+        let mut reward_amount = default_amount;
         if reward_amount > reward_treasury_balance {
             reward_amount = reward_treasury_balance.checked_div(100).unwrap();
         }
