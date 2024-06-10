@@ -60,7 +60,7 @@ pub struct WithdrawFunds<'info> {
     }
 
     // use withdraw_funds_v2.rs if donation mint is different
-    // bc fair calculation of rewards linkend with donation protocol mint
+    // bc fair calculation of rewards is linkend with donation protocol mint
     if ctx.accounts.donation_mint.key() != ctx.accounts.donation_protocol.donation_mint {
         return Err(DonationError::InvalidDonationMint.into());
     }

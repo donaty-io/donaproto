@@ -78,6 +78,8 @@ pub fn donate(ctx: Context<Donate>, amount: u64) -> Result<()> {
         return Err(DonationError::DonationAmountZero.into());
     }
 
+    // use donate_v2 if donation mint is different
+    // bc fair calculation of rewards is linkend with donation protocol mint
     if ctx.accounts.donation_mint.key() != ctx.accounts.donation_protocol.donation_mint {
         return Err(DonationError::InvalidDonationMint.into());
     }
