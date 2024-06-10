@@ -1,5 +1,6 @@
 const borsh = require('borsh');
 const anchor = require("@coral-xyz/anchor");
+const fs = require('fs');
 
 async function getNowTs(provider) {
   const accountInfo = await provider.connection.getAccountInfo(anchor.web3.SYSVAR_CLOCK_PUBKEY);
@@ -19,7 +20,19 @@ async function rechargeWallet(connection, wallet, lamports) {
   return wallet;
 }
 
+const loadObjectFromJsonFile = (filePath) => {
+  try {
+    const jsonString = fs.readFileSync(filePath, 'utf8');
+    const object = JSON.parse(jsonString);
+    return object;
+  } catch (err) {
+    console.error(`Error loading object from JSON file: ${err}`);
+    return null;
+  }
+};
+
 module.exports = {
   getNowTs,
   rechargeWallet,
+  loadObjectFromJsonFile,
 };

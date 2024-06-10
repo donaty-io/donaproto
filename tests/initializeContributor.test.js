@@ -6,9 +6,8 @@ const {
 } = require('@solana/spl-token');
 const os = require('os');
 const assert = require('assert');
+const { TREASURY_PREFIX, CONTRIBUTOR_PREFIX } = require("./common/seeds");
 
-const TREASURY_PREFIX = 'treasury';
-const CONTRIBUTOR_PREFIX = 'contributor';
 
 describe("donaproto", () => {
   const homedir = os.homedir();
@@ -45,7 +44,7 @@ describe("donaproto", () => {
       rewardMintDecimals
     )
 
-    const [treasuryOwnerPK, treasuryOwnerBump] = anchor.web3.PublicKey.findProgramAddressSync(
+    const [treasuryOwnerPubkey, treasuryOwnerBump] = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from(TREASURY_PREFIX),
         donationProtocolData.publicKey.toBuffer(),
@@ -57,7 +56,7 @@ describe("donaproto", () => {
       connection,
       payer,
       rewardsMintPubKey,
-      treasuryOwnerPK,
+      treasuryOwnerPubkey,
       allowOwnerOffCurve = true
     )
 
@@ -69,7 +68,7 @@ describe("donaproto", () => {
         accounts: {
           donationProtocolData: donationProtocolData.publicKey,
           treasury: treasuryTokenAccount.address,
-          treasuryOwner: treasuryOwnerPK,
+          treasuryOwner: treasuryOwnerPubkey,
           treasuryMint: rewardsMintPubKey,
           donationMint: donationMintPubKey,
           payer: payer.publicKey,

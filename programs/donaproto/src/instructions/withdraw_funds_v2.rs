@@ -1,11 +1,12 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, TokenAccount, Transfer};
+use raydium_amm_v3::states::PoolState;
 
-use crate::{errors::DonationError, states::{CreatorData, DonationData, DonationProtocolData}, HOLDING_PREFIX};
+use crate::{errors::DonationError, states::{AuthorizedClmmPool, CreatorData, DonationData, DonationProtocolData}, utils::calculate_amount, AUTHORIZED_CLMM_POOL_PREFIX, HOLDING_PREFIX};
 
 
 #[derive(Accounts)]
-pub struct WithdrawFunds<'info> {
+pub struct WithdrawFundsV2<'info> {
     #[account(mut,
       constraint = donation_data.donation_protocol == donation_protocol.key(),
       constraint = donation_data.holding_wallet == holding_wallet.key(),
@@ -16,6 +17,9 @@ pub struct WithdrawFunds<'info> {
       constraint = creator_data.donation_protocol == donation_protocol.key(),
     )]
     pub creator_data: Account<'info, CreatorData>,
+    #[account(
+      constraint = donation_protocol.donation_mint == default_donation_mint.key(),
+    )]
     pub donation_protocol: Account<'info, DonationProtocolData>,
 
     #[account(mut,
@@ -38,15 +42,34 @@ pub struct WithdrawFunds<'info> {
     )]
     pub recipient_token_wallet: Account<'info, TokenAccount>,
     #[account(
-      constraint = donation_protocol.donation_mint.key() == donation_mint.key(),
+      constraint = authorized_clmm_pool.mint == donation_mint.key(),
     )]
     pub donation_mint: Account<'info, Mint>,
+
+    pub default_donation_mint: Account<'info, Mint>,
+    #[account(
+        seeds = [
+            AUTHORIZED_CLMM_POOL_PREFIX.as_bytes(),
+            donation_protocol.key().as_ref(),
+            pool_state.key().as_ref(),
+        ],
+        bump,
+        constraint = authorized_clmm_pool.donation_protocol == donation_protocol.key(),
+        constraint = authorized_clmm_pool.pool_state == pool_state.key(),
+    )]
+    pub authorized_clmm_pool: Account<'info, AuthorizedClmmPool>,
+    #[account(
+        constraint = (pool_state.load()?.token_mint_0 == donation_protocol.donation_mint && pool_state.load()?.token_mint_1 == donation_mint.key())
+            || (pool_state.load()?.token_mint_1 == donation_protocol.donation_mint && pool_state.load()?.token_mint_0 == donation_mint.key()),
+    )]
+    pub pool_state: AccountLoader<'info, PoolState>,
+
     #[account(mut)]
     pub payer: Signer<'info>,
     pub token_program: Program<'info, anchor_spl::token::Token>,
 }
 
-  pub fn withdraw_funds(ctx: Context<WithdrawFunds>) -> Result<()> {
+  pub fn withdraw_funds_v2(ctx: Context<WithdrawFundsV2>) -> Result<()> {
     let donation_data = &mut ctx.accounts.donation_data;
 
     if donation_data.is_closed {
@@ -59,9 +82,7 @@ pub struct WithdrawFunds<'info> {
         return Err(DonationError::DonationEndingReqiuirementsNotMet.into());
     }
 
-    // use withdraw_funds_v2.rs if donation mint is different
-    // bc fair calculation of rewards is linkend with donation protocol mint
-    if ctx.accounts.donation_mint.key() != ctx.accounts.donation_protocol.donation_mint {
+    if ctx.accounts.donation_protocol.donation_mint == ctx.accounts.donation_mint.key() {
         return Err(DonationError::InvalidDonationMint.into());
     }
 
@@ -89,10 +110,22 @@ pub struct WithdrawFunds<'info> {
         donation_data.total_amount_received,
     )?;
 
+    let default_donation_mint = &ctx.accounts.default_donation_mint;
+    let donation_mint = &ctx.accounts.donation_mint;
+    let is_default_token_mint_0 = ctx.accounts.pool_state.load()?.token_mint_0
+        == ctx.accounts.donation_protocol.donation_mint;
+    let total_amount_received = calculate_amount(
+        default_donation_mint.decimals,
+        donation_mint.decimals,
+        donation_data.total_amount_received,
+        ctx.accounts.pool_state.load()?.sqrt_price_x64,
+        is_default_token_mint_0,
+    );
+
     let creator_data = &mut ctx.accounts.creator_data;
     creator_data.total_amount_received = creator_data
         .total_amount_received
-        .checked_add(donation_data.total_amount_received)
+        .checked_add(total_amount_received)
         .unwrap();
     creator_data.donations_closed_count =
         creator_data.donations_closed_count.checked_add(1).unwrap();

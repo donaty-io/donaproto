@@ -17,4 +17,10 @@ default = []
 
 [dependencies]
 anchor-lang = "0.29.0"
-anchor-spl = "0.29.0"
+anchor-spl = { version = "0.29.0" }
+raydium-amm-v3 = { git = "https://github.com/raydium-io/raydium-clmm", features = [
+    "no-entrypoint",
+    "cpi",
+    "devnet"
+] }
+# TODO: add feature devnet dependent on build profile: test or release
